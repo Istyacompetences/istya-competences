@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="ISTYA Compétences">
+<link rel="manifest" href="manifest.json">
+<title>Suivi des Compétences — ISTYA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F2ED; --surface: #FDFBF8; --border: #D8D2C8;
+    --text: #1A1714; --text-muted: #7A7268;
+    --accent: #C4552A; --accent-light: #F0E4DC;
+    --green: #3A7D52; --green-light: #D8EDE1;
+    --yellow: #C49A2A; --yellow-light: #F5EDD5;
+    --blue: #2A6FAA; --blue-light: #D5E6F5;
+    --gray: #EDEAE5; --radius: 10px;
+    --shadow: 0 2px 12px rgba(26,23,20,0.08);
+    --shadow-lg: 0 8px 32px rgba(26,23,20,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--text); color: white; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+  .logo span { color: var(--accent); }
+
+  /* BOTTOM NAV (mobile-first) */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--text); display: flex; z-index: 100; border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: env(safe-area-inset-bottom); }
+  .bnav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 0; border: none; background: none; color: rgba(255,255,255,0.45); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; transition: color 0.15s; }
+  .bnav-btn .icon { font-size: 1.2rem; }
+  .bnav-btn:hover, .bnav-btn.active { color: white; }
+  .bnav-btn.active .icon { filter: drop-shadow(0 0 6px var(--accent)); }
+  .bnav-btn.active { color: var(--accent); }
+
+  /* TOP NAV (desktop) */
+  .top-nav { display: none; gap: 4px; }
+  .nav-tab { background: none; border: none; color: rgba(255,255,255,0.55); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .nav-tab:hover { color: white; background: rgba(255,255,255,0.1); }
+  .nav-tab.active { color: white; background: var(--accent); }
+
+  @media (min-width: 700px) {
+    .bottom-nav { display: none; }
+    .top-nav { display: flex; }
+  }
+
+  main { max-width: 900px; margin: 0 auto; padding: 28px 20px 90px; }
+  @media (min-width: 700px) { main { padding: 36px 24px 40px; } }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; font-weight: 400; margin-bottom: 4px; }
+  .page-title em { color: var(--accent); font-style: italic; }
+  .page-subtitle { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 24px; }
+
+  /* INSTALL BANNER */
+  .install-banner { background: var(--accent); color: white; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; animation: fadeIn 0.3s ease; }
+  .install-banner p { font-size: 0.85rem; font-weight: 500; }
+  .install-banner p span { display: block; font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+  .install-btn { background: white; color: var(--accent); border: none; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .dismiss-btn { background: none; border: none; color: white; opacity: 0.7; cursor: pointer; font-size: 1.1rem; padding: 4px; }
+
+  /* FORM */
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  input, select, textarea { font-family: 'DM Sans', sans-serif; font-size: 0.92rem; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 10px 13px; color: var(--text); outline: none; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  hr.divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); }
+
+  .type-pills, .niveau-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .type-pill { border: 1.5px solid var(--border); background: var(--bg); border-radius: 100px; padding: 8px 16px; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+  .niveau-pill { border: 1.5px solid var(--border); background: var(--bg); border-radius: 8px; padding: 9px 12px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text-muted); font-family: 'DM Sans', sans-serif; flex: 1; min-width: 130px; text-align: center; }
+  .type-pill:hover, .niveau-pill:hover { border-color: var(--text); color: var(--text); }
+  .sel-eval { border-color: var(--accent) !important; background: var(--accent-light) !important; color: var(--accent) !important; }
+  .sel-phases { border-color: var(--green) !important; background: var(--green-light) !important; color: var(--green) !important; }
+  .sel-formation { border-color: #7B3FA8 !important; background: #EDE0F7 !important; color: #7B3FA8 !important; }
+  .sel-bilan { border-color: var(--blue) !important; background: var(--blue-light) !important; color: var(--blue) !important; }
+  .sel-niveau { border-color: var(--green) !important; background: var(--green-light) !important; color: var(--green) !important; }
+
+  .form-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); gap: 12px; }
+  .btn-primary { background: var(--accent); color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.92rem; font-weight: 600; padding: 12px 24px; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .btn-primary:hover { background: #A8441F; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary { background: none; color: var(--text-muted); border: 1.5px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; padding: 10px 18px; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+
+  /* SUIVI */
+  .suivi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .filter-bar select { font-size: 0.85rem; padding: 8px 13px; width: auto; min-width: 160px; }
+  .salaries-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 22px; }
+
+  .salarie-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px 18px 14px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .salarie-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); transition: background 0.2s; }
+  .salarie-card:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+  .salarie-card:hover::before, .salarie-card.selected::before { background: var(--accent); }
+  .salarie-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .salarie-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: 10px; }
+  .salarie-stats { display: flex; gap: 18px; margin-bottom: 8px; }
+  .stat-val { font-size: 1.3rem; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-lbl { font-size: 0.67rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .mini-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+
+  .badge { font-size: 0.68rem; font-weight: 500; padding: 2px 7px; border-radius: 100px; background: var(--gray); color: var(--text-muted); }
+  .badge.acquis { background: var(--green-light); color: var(--green); }
+  .badge.en-cours { background: var(--yellow-light); color: var(--yellow); }
+  .badge.non-acquis { background: #F5E0E0; color: #B44242; }
+  .badge.transfert { background: var(--blue-light); color: var(--blue); }
+  .tag { font-size: 0.68rem; font-weight: 500; padding: 2px 7px; border-radius: 4px; }
+  .tag-eval { background: var(--accent-light); color: var(--accent); }
+  .tag-phases { background: var(--green-light); color: var(--green); }
+  .tag-formation { background: #EDE0F7; color: #7B3FA8; }
+  .tag-bilan { background: var(--blue-light); color: var(--blue); }
+  .tag-duree { background: var(--gray); color: var(--text-muted); }
+
+  .detail-panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); display: none; }
+  .detail-panel.visible { display: block; animation: fadeIn 0.25s ease; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .detail-name { font-family: 'DM Serif Display', serif; font-size: 1.5rem; font-weight: 400; }
+  .close-btn { background: var(--gray); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: all 0.15s; }
+  .close-btn:hover { background: var(--border); color: var(--text); }
+  .detail-stats-row { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .detail-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; flex: 1; min-width: 90px; text-align: center; }
+  .detail-stat .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .detail-stat .lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 2px; }
+  .activites-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px; }
+
+  .timeline { display: flex; flex-direction: column; }
+  .timeline-item { display: grid; grid-template-columns: 32px 1fr; gap: 0 8px; }
+  .tl-dot-col { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); margin-top: 8px; flex-shrink: 0; }
+  .tl-dot.eval { border-color: var(--accent); background: var(--accent); }
+  .tl-dot.phases { border-color: var(--green); background: var(--green); }
+  .tl-dot.formation { border-color: #7B3FA8; background: #7B3FA8; }
+  .tl-dot.bilan { border-color: var(--blue); background: var(--blue); }
+  .tl-line { flex: 1; width: 2px; background: var(--border); margin-top: 2px; }
+  .tl-content { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; margin-bottom: 10px; }
+  .tl-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; gap: 8px; }
+  .tl-nom { font-weight: 600; font-size: 0.86rem; }
+  .tl-date { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+  .tl-comp { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 5px; }
+  .tl-meta { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .tl-rapport { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: 4px; }
+
+  /* RÉFÉRENTIEL */
+  .section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 22px 0 10px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .comp-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 18px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 10px; }
+  .comp-name { font-weight: 600; font-size: 0.92rem; margin-bottom: 4px; }
+  .comp-obj { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px; }
+  .comp-meta { display: flex; gap: 5px; flex-wrap: wrap; }
+  .comp-tag { font-size: 0.68rem; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: var(--gray); color: var(--text-muted); }
+  .comp-duree { font-size: 1.05rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+  .empty-state .ei { font-size: 2.2rem; margin-bottom: 10px; }
+
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(40px); background: var(--text); color: white; padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; box-shadow: var(--shadow-lg); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  @media (min-width: 700px) { .toast { bottom: 32px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ISTYA <span>Compétences</span></div>
+  <nav class="top-nav">
+    <button class="nav-tab active" onclick="switchView('saisie',this)">+ Saisir</button>
+    <button class="nav-tab" onclick="switchView('suivi',this)">Suivi des salariés</button>
+    <button class="nav-tab" onclick="switchView('referentiel',this)">Référentiel</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- SAISIE -->
+  <div class="view active" id="view-saisie">
+    <div id="install-banner-container"></div>
+    <div class="page-title">Saisir une <em>activité</em></div>
+    <div class="page-subtitle">Évaluation, phase réflexive, formation ou bilan</div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Salarié</label>
+          <select id="f-salarie"></select>
+        </div>
+        <div class="form-group">
+          <label>Encadrant</label>
+          <select id="f-encadrant"></select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label>Durée (minutes)</label>
+          <input type="number" id="f-duree" placeholder="ex. 60" min="0" step="5">
+        </div>
+        <hr class="divider">
+        <div class="form-group full">
+          <label>Type d'activité</label>
+          <div class="type-pills">
+            <button class="type-pill" data-type="Evaluation" data-sel="sel-eval" onclick="selectPill(this,'type')">📋 Évaluation</button>
+            <button class="type-pill" data-type="Phase reflexives" data-sel="sel-phases" onclick="selectPill(this,'type')">🔄 Phase réflexive</button>
+            <button class="type-pill" data-type="Formation" data-sel="sel-formation" onclick="selectPill(this,'type')">📚 Formation</button>
+            <button class="type-pill" data-type="Bilan de positionnement" data-sel="sel-bilan" onclick="selectPill(this,'type')">🎯 Bilan</button>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Compétence travaillée</label>
+          <select id="f-competence"></select>
+        </div>
+        <div class="form-group full">
+          <label>Niveau de la compétence observé</label>
+          <div class="niveau-pills">
+            <button class="niveau-pill" data-niveau="Non acquis" data-sel="sel-niveau" onclick="selectPill(this,'niveau')">🔴 Non acquis</button>
+            <button class="niveau-pill" data-niveau="En cours d'acquisition" data-sel="sel-niveau" onclick="selectPill(this,'niveau')">🟡 En cours d'acquisition</button>
+            <button class="niveau-pill" data-niveau="Acquis" data-sel="sel-niveau" onclick="selectPill(this,'niveau')">🟢 Acquis</button>
+            <button class="niveau-pill" data-niveau="Capacité de transfert" data-sel="sel-niveau" onclick="selectPill(this,'niveau')">🔵 Capacité de transfert</button>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Rapport de l'activité</label>
+          <select id="f-rapport">
+            <option value="">— Sélectionner —</option>
+            <option>Evaluation réalisée</option>
+            <option>Phases reflexives non réalisées</option>
+            <option>Phases reflexives réalisées avec aide</option>
+            <option>Phases réflexives réalisées avec succès</option>
+            <option>Formation réalisée</option>
+            <option>Bilan de positionnement réalisé</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Intitulé de l'activité</label>
+          <input type="text" id="f-nom" placeholder="ex. Évaluation tri sélectif — Mars 2026">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="resetForm()">Réinitialiser</button>
+        <button class="btn-primary" onclick="saveActivite()">Enregistrer →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUIVI -->
+  <div class="view" id="view-suivi">
+    <div class="suivi-top">
+      <div>
+        <div class="page-title">Suivi des <em>salariés</em></div>
+        <div class="page-subtitle" style="margin-bottom:0">Cliquez sur une carte pour le détail</div>
+      </div>
+      <div class="filter-bar">
+        <select id="filter-sal" onchange="renderSuivi()">
+          <option value="">Tous les salariés</option>
+        </select>
+      </div>
+    </div>
+    <div class="salaries-grid" id="salaries-grid"></div>
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-header">
+        <div class="detail-name" id="detail-name"></div>
+        <button class="close-btn" onclick="closeDetail()">✕</button>
+      </div>
+      <div class="detail-stats-row" id="detail-stats"></div>
+      <div class="activites-title">Historique des activités</div>
+      <div class="timeline" id="detail-timeline"></div>
+    </div>
+  </div>
+
+  <!-- RÉFÉRENTIEL -->
+  <div class="view" id="view-referentiel">
+    <div class="page-title">Référentiel des <em>compétences</em></div>
+    <div class="page-subtitle">Objectifs, secteurs et durées estimées</div>
+    <div id="comp-list"></div>
+  </div>
+
+</main>
+
+<!-- Bottom nav mobile -->
+<nav class="bottom-nav">
+  <button class="bnav-btn active" onclick="switchView('saisie',this,true)">
+    <span class="icon">✏️</span>Saisir
+  </button>
+  <button class="bnav-btn" onclick="switchView('suivi',this,true)">
+    <span class="icon">👥</span>Suivi
+  </button>
+  <button class="bnav-btn" onclick="switchView('referentiel',this,true)">
+    <span class="icon">📋</span>Référentiel
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DONNÉES ============
+const DATA = {
+  salaries: [
+    { id:'s1', nom:'Martin Dupont' },
+    { id:'s2', nom:'Amélie Renard' },
+    { id:'s3', nom:'Karim Benali' },
+    { id:'s4', nom:'Sophie Girard' },
+  ],
+  encadrants: [
+    { id:'e1', nom:'Jean-Pierre Morel' },
+    { id:'e2', nom:'Claire Fontaine' },
+  ],
+  competences: [
+    { id:'c1', nom:'Trier et conditionner les déchets recyclables', secteurs:['Tri'], bloc:'Recyclerie', duree:4,
+      objectifs:'Identifier et séparer les matériaux selon les filières de recyclage. Respecter les consignes de tri sélectif.' },
+    { id:'c2', nom:'Réceptionner et contrôler les apports', secteurs:['Réception'], bloc:'Recyclerie', duree:3,
+      objectifs:'Accueillir les apports, contrôler la conformité des dons, enregistrer les entrées.' },
+    { id:'c3', nom:'Entretenir les espaces verts', secteurs:['Entretien EV'], bloc:'Espaces Verts', duree:6,
+      objectifs:'Tondre, tailler, désherber et entretenir les espaces verts selon les consignes.' },
+    { id:'c4', nom:'Valoriser et mettre en vente les objets', secteurs:['Création'], bloc:'Recyclerie', duree:5,
+      objectifs:'Nettoyer, réparer ou transformer des objets pour les mettre en vente. Estimer et étiqueter les prix.' },
+  ],
+  activites: [
+    { id:'a1', nom:'Évaluation tri sélectif initiale', type:'Evaluation', salarieId:'s1', encadrantId:'e1', competenceId:'c1', date:'2026-02-10', duree:60, niveau:"En cours d'acquisition", rapport:'Evaluation réalisée' },
+    { id:'a2', nom:'Phase réflexive tri déchets', type:'Phase reflexives', salarieId:'s1', encadrantId:'e1', competenceId:'c1', date:'2026-02-17', duree:30, niveau:'Acquis', rapport:'Phases réflexives réalisées avec succès' },
+    { id:'a3', nom:'Bilan de positionnement réception', type:'Bilan de positionnement', salarieId:'s2', encadrantId:'e2', competenceId:'c2', date:'2026-01-28', duree:45, niveau:'Non acquis', rapport:'Bilan de positionnement réalisé' },
+    { id:'a4', nom:'Formation outils espaces verts', type:'Formation', salarieId:'s3', encadrantId:'e1', competenceId:'c3', date:'2026-02-05', duree:120, niveau:"En cours d'acquisition", rapport:'Formation réalisée' },
+  ]
+};
+
+let selectedType=null, selectedNiveau=null, activeSalarieId=null;
+let deferredInstall=null;
+
+// ============ NAV ============
+function switchView(id, btn, isMobile=false) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  if (isMobile) {
+    document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  }
+  btn.classList.add('active');
+  if (id==='suivi') renderSuivi();
+  if (id==='referentiel') renderRef();
+}
+
+// ============ INSTALL PWA ============
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('install-banner-container').innerHTML = `
+    <div class="install-banner" id="install-banner">
+      <p>📲 Installer l'application
+        <span>Accès rapide depuis votre écran d'accueil, sans navigateur</span>
+      </p>
+      <button class="install-btn" onclick="installPWA()">Installer</button>
+      <button class="dismiss-btn" onclick="dismissInstall()">✕</button>
+    </div>`;
+});
+
+function installPWA() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(() => { deferredInstall=null; dismissInstall(); });
+}
+
+function dismissInstall() {
+  const b = document.getElementById('install-banner');
+  if (b) b.remove();
+}
+
+// ============ INIT SELECTS ============
+function initSelects() {
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  const sel = (id, items, lbl) => {
+    const el = document.getElementById(id);
+    el.innerHTML = '<option value="">— Sélectionner —</option>' + items.map(i=>`<option value="${i.id}">${lbl(i)}</option>`).join('');
+  };
+  sel('f-salarie', DATA.salaries, s=>s.nom);
+  sel('f-encadrant', DATA.encadrants, e=>e.nom);
+  sel('f-competence', DATA.competences, c=>c.nom);
+  const fs = document.getElementById('filter-sal');
+  DATA.salaries.forEach(s => fs.innerHTML += `<option value="${s.id}">${s.nom}</option>`);
+}
+
+// ============ SAISIE ============
+function selectPill(btn, group) {
+  document.querySelectorAll(group==='type'?'.type-pill':'.niveau-pill').forEach(p => {
+    p.className = group==='type' ? 'type-pill' : 'niveau-pill';
+  });
+  btn.classList.add(btn.dataset.sel);
+  if (group==='type') selectedType = btn.dataset.type;
+  else selectedNiveau = btn.dataset.niveau;
+}
+
+function resetForm() {
+  ['f-salarie','f-encadrant','f-competence','f-rapport'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f-duree').value='';
+  document.getElementById('f-nom').value='';
+  document.querySelectorAll('.type-pill').forEach(p=>p.className='type-pill');
+  document.querySelectorAll('.niveau-pill').forEach(p=>p.className='niveau-pill');
+  selectedType=null; selectedNiveau=null;
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+}
+
+function saveActivite() {
+  const salarieId = document.getElementById('f-salarie').value;
+  const competenceId = document.getElementById('f-competence').value;
+  if (!salarieId||!selectedType||!competenceId) {
+    showToast('⚠️ Salarié, type et compétence sont requis', true); return;
+  }
+  const c = DATA.competences.find(x=>x.id===competenceId);
+  DATA.activites.push({
+    id:'a'+Date.now(),
+    nom: document.getElementById('f-nom').value || (selectedType+(c?' — '+c.nom:'')),
+    type: selectedType, salarieId,
+    encadrantId: document.getElementById('f-encadrant').value,
+    competenceId,
+    date: document.getElementById('f-date').value,
+    duree: parseInt(document.getElementById('f-duree').value)||0,
+    niveau: selectedNiveau||'',
+    rapport: document.getElementById('f-rapport').value
+  });
+  showToast('✓ Activité enregistrée !');
+  resetForm();
+}
+
+// ============ SUIVI ============
+const typeClass = {'Evaluation':'eval','Phase reflexives':'phases','Formation':'formation','Bilan de positionnement':'bilan'};
+const typeLabel = {'Evaluation':'📋 Évaluation','Phase reflexives':'🔄 Phase réflexive','Formation':'📚 Formation','Bilan de positionnement':'🎯 Bilan'};
+const tagClass  = {'Evaluation':'tag-eval','Phase reflexives':'tag-phases','Formation':'tag-formation','Bilan de positionnement':'tag-bilan'};
+
+function niveauBadge(n) {
+  const map={'Non acquis':'non-acquis',"En cours d'acquisition":'en-cours','Acquis':'acquis','Capacité de transfert':'transfert'};
+  return n ? `<span class="badge ${map[n]||''}">${n}</span>` : '';
+}
+
+function renderSuivi() {
+  const filter = document.getElementById('filter-sal').value;
+  const salaries = filter ? DATA.salaries.filter(s=>s.id===filter) : DATA.salaries;
+  const grid = document.getElementById('salaries-grid');
+  grid.innerHTML = salaries.map(s => {
+    const acts = DATA.activites.filter(a=>a.salarieId===s.id);
+    const totalMin = acts.reduce((acc,a)=>acc+(a.duree||0),0);
+    const comps = [...new Set(acts.map(a=>a.competenceId).filter(Boolean))];
+    const dernierNiveau = acts.filter(a=>a.niveau).slice(-1)[0]?.niveau;
+    const compBadges = comps.slice(0,3).map(cid=>{
+      const c=DATA.competences.find(x=>x.id===cid);
+      return c?`<span class="badge">${c.nom.length>26?c.nom.slice(0,24)+'…':c.nom}</span>`:'';
+    }).join('');
+    return `<div class="salarie-card${activeSalarieId===s.id?' selected':''}" onclick="showDetail('${s.id}')">
+      <div class="salarie-name">${s.nom}</div>
+      <div class="salarie-stats">
+        <div><div class="stat-val">${acts.length}</div><div class="stat-lbl">Activités</div></div>
+        <div><div class="stat-val">${(totalMin/60).toFixed(1)}h</div><div class="stat-lbl">Réalisées</div></div>
+        <div><div class="stat-val">${comps.length}</div><div class="stat-lbl">Compétences</div></div>
+      </div>
+      ${dernierNiveau?niveauBadge(dernierNiveau):''}
+      <div class="mini-badges">${compBadges}</div>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(salarieId) {
+  activeSalarieId=salarieId;
+  renderSuivi();
+  const s=DATA.salaries.find(x=>x.id===salarieId);
+  const acts=DATA.activites.filter(a=>a.salarieId===salarieId).sort((a,b)=>b.date.localeCompare(a.date));
+  const totalMin=acts.reduce((acc,a)=>acc+(a.duree||0),0);
+  const comps=[...new Set(acts.map(a=>a.competenceId).filter(Boolean))];
+  document.getElementById('detail-name').textContent=s.nom;
+  document.getElementById('detail-stats').innerHTML=`
+    <div class="detail-stat"><div class="val">${acts.length}</div><div class="lbl">Activités</div></div>
+    <div class="detail-stat"><div class="val">${(totalMin/60).toFixed(1)}h</div><div class="lbl">Heures</div></div>
+    <div class="detail-stat"><div class="val">${comps.length}</div><div class="lbl">Compétences</div></div>`;
+  document.getElementById('detail-timeline').innerHTML = acts.length
+    ? acts.map((a,i)=>{
+        const c=DATA.competences.find(x=>x.id===a.competenceId);
+        return `<div class="timeline-item">
+          <div class="tl-dot-col">
+            <div class="tl-dot ${typeClass[a.type]||''}"></div>
+            ${i<acts.length-1?'<div class="tl-line"></div>':''}
+          </div>
+          <div class="tl-content">
+            <div class="tl-top"><div class="tl-nom">${a.nom}</div><div class="tl-date">${fmtDate(a.date)}</div></div>
+            ${c?`<div class="tl-comp">${c.nom}</div>`:''}
+            <div class="tl-meta">
+              <span class="tag ${tagClass[a.type]||''}">${typeLabel[a.type]||a.type}</span>
+              ${niveauBadge(a.niveau)}
+              ${a.duree?`<span class="tag tag-duree">⏱ ${a.duree}min`:''}
+            </div>
+            ${a.rapport?`<div class="tl-rapport">${a.rapport}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty-state"><div class="ei">📭</div><p>Aucune activité enregistrée</p></div>';
+  const panel=document.getElementById('detail-panel');
+  panel.classList.add('visible');
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function closeDetail() {
+  activeSalarieId=null;
+  document.getElementById('detail-panel').classList.remove('visible');
+  renderSuivi();
+}
+
+function fmtDate(iso) {
+  if(!iso) return '—';
+  const [y,m,d]=iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ============ RÉFÉRENTIEL ============
+function renderRef() {
+  const blocs={};
+  DATA.competences.forEach(c=>{if(!blocs[c.bloc])blocs[c.bloc]=[];blocs[c.bloc].push(c);});
+  document.getElementById('comp-list').innerHTML=Object.entries(blocs).map(([bloc,comps])=>
+    `<div class="section-label">${bloc}</div>`+
+    comps.map(c=>`<div class="comp-card">
+      <div>
+        <div class="comp-name">${c.nom}</div>
+        <div class="comp-obj">${c.objectifs}</div>
+        <div class="comp-meta">
+          ${c.secteurs.map(s=>`<span class="comp-tag">📍 ${s}</span>`).join('')}
+          <span class="comp-tag">⏱ ${c.duree}h</span>
+        </div>
+      </div>
+      <div class="comp-duree">${c.duree}h</div>
+    </div>`).join('')
+  ).join('');
+}
+
+// ============ TOAST ============
+function showToast(msg, warn=false) {
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=warn?'#8B3A1F':'var(--text)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ============ SERVICE WORKER ============
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
+// ============ INIT ============
+initSelects();
+renderSuivi();
+</script>
+</body>
+</html>
