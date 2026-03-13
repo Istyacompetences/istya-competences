@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1A1714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ISTYA Compétences">
+<link rel="manifest" href="manifest.json">
+<title>Suivi des Compétences — ISTYA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F5F2ED;--surface:#FDFBF8;--border:#D8D2C8;
+    --text:#1A1714;--muted:#7A7268;
+    --accent:#C4552A;--accent-l:#F0E4DC;
+    --green:#3A7D52;--green-l:#D8EDE1;
+    --yellow:#C49A2A;--yellow-l:#F5EDD5;
+    --blue:#2A6FAA;--blue-l:#D5E6F5;
+    --gray:#EDEAE5;--r:10px;
+    --sh:0 2px 12px rgba(26,23,20,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* ── SETUP SCREEN ── */
+  .setup-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .setup-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;max-width:520px;width:100%;box-shadow:var(--sh)}
+  .setup-logo{font-family:'DM Serif Display',serif;font-size:1.4rem;margin-bottom:4px}
+  .setup-logo span{color:var(--accent)}
+  .setup-subtitle{color:var(--muted);font-size:0.88rem;margin-bottom:28px}
+  .setup-section{margin-bottom:20px}
+  .setup-section h3{font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:10px}
+  .setup-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .setup-field label{font-size:0.78rem;color:var(--text);font-weight:500}
+  .setup-field input{font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 13px;color:var(--text);outline:none;width:100%;font-family:monospace}
+  .setup-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+  .setup-field .hint{font-size:0.72rem;color:var(--muted)}
+  .setup-help{background:var(--gray);border-radius:8px;padding:12px 14px;font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:20px}
+  .setup-help a{color:var(--accent);text-decoration:none}
+  .btn-setup{width:100%;background:var(--accent);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;padding:13px;border-radius:var(--r);cursor:pointer;transition:background 0.2s}
+  .btn-setup:hover{background:#A8441F}
+  .setup-error{background:#F5E0E0;border:1px solid #D4A0A0;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#7A2020;margin-bottom:16px;display:none}
+  .setup-error.show{display:block}
+
+  /* ── APP ── */
+  #app{display:none}
+  header{background:var(--text);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+  .logo{font-family:'DM Serif Display',serif;font-size:1.1rem}
+  .logo span{color:var(--accent)}
+  .top-nav{display:none;gap:4px}
+  .nav-tab{background:none;border:none;color:rgba(255,255,255,0.55);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;padding:8px 16px;border-radius:6px;cursor:pointer;transition:all 0.2s}
+  .nav-tab:hover{color:white;background:rgba(255,255,255,0.1)}
+  .nav-tab.active{color:white;background:var(--accent)}
+  .btn-config{background:none;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;font-size:0.75rem;padding:5px 10px;border-radius:6px;cursor:pointer}
+  .btn-config:hover{color:white;border-color:rgba(255,255,255,0.5)}
+
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--text);display:flex;z-index:100;border-top:1px solid rgba(255,255,255,0.1);padding-bottom:env(safe-area-inset-bottom)}
+  .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 0;border:none;background:none;color:rgba(255,255,255,0.45);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
+  .bnav-btn .icon{font-size:1.2rem}
+  .bnav-btn.active{color:var(--accent)}
+  @media(min-width:700px){.bottom-nav{display:none}.top-nav{display:flex}}
+
+  main{max-width:900px;margin:0 auto;padding:28px 20px 90px}
+  @media(min-width:700px){main{padding:36px 24px 40px}}
+  .view{display:none}
+  .view.active{display:block;animation:fadeIn 0.2s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  .page-title{font-family:'DM Serif Display',serif;font-size:1.8rem;font-weight:400;margin-bottom:4px}
+  .page-title em{color:var(--accent);font-style:italic}
+  .page-subtitle{color:var(--muted);font-size:0.88rem;margin-bottom:24px}
+
+  .loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:0.88rem;padding:20px 0}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .err-banner{background:#F5E0E0;border:1px solid #D4A0A0;border-radius:10px;padding:12px 16px;font-size:0.85rem;color:#7A2020;margin-bottom:16px;display:none}
+  .err-banner.show{display:block}
+
+  .form-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--sh)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+  .fg{display:flex;flex-direction:column;gap:5px}
+  .fg.full{grid-column:1/-1}
+  label{font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+  input,select{font-family:'DM Sans',sans-serif;font-size:0.92rem;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 13px;color:var(--text);outline:none;width:100%;transition:border-color 0.2s,box-shadow 0.2s;-webkit-appearance:none}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+  hr.div{grid-column:1/-1;border:none;border-top:1px solid var(--border)}
+
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .pill{border:1.5px solid var(--border);background:var(--bg);border-radius:100px;padding:8px 16px;font-size:0.82rem;font-weight:500;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all 0.15s}
+  .npill{border:1.5px solid var(--border);background:var(--bg);border-radius:8px;padding:9px 12px;font-size:0.8rem;font-weight:500;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;flex:1;min-width:130px;text-align:center;transition:all 0.15s}
+  .pill:hover,.npill:hover{border-color:var(--text);color:var(--text)}
+  .s-eval{border-color:var(--accent)!important;background:var(--accent-l)!important;color:var(--accent)!important}
+  .s-phases{border-color:var(--green)!important;background:var(--green-l)!important;color:var(--green)!important}
+  .s-formation{border-color:#7B3FA8!important;background:#EDE0F7!important;color:#7B3FA8!important}
+  .s-bilan{border-color:var(--blue)!important;background:var(--blue-l)!important;color:var(--blue)!important}
+  .s-niv{border-color:var(--green)!important;background:var(--green-l)!important;color:var(--green)!important}
+
+  .form-actions{display:flex;align-items:center;justify-content:space-between;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);gap:12px}
+  .btn-primary{background:var(--accent);color:white;border:none;font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:600;padding:12px 24px;border-radius:var(--r);cursor:pointer;transition:all 0.2s;flex-shrink:0}
+  .btn-primary:hover{background:#A8441F}
+  .btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+  .btn-sec{background:none;color:var(--muted);border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;padding:10px 18px;border-radius:var(--r);cursor:pointer;transition:all 0.2s}
+  .btn-sec:hover{border-color:var(--text);color:var(--text)}
+
+  .suivi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  .sal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:22px}
+  .sal-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:18px 18px 14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+  .sal-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--border);transition:background 0.2s}
+  .sal-card:hover{border-color:var(--accent);box-shadow:var(--sh)}
+  .sal-card:hover::before,.sal-card.sel::before{background:var(--accent)}
+  .sal-card.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+  .sal-name{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:10px}
+  .sal-stats{display:flex;gap:18px;margin-bottom:8px}
+  .sv{font-size:1.3rem;font-weight:700;color:var(--accent);line-height:1}
+  .sl{font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-top:2px}
+  .mbadges{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+
+  .badge{font-size:0.68rem;font-weight:500;padding:2px 7px;border-radius:100px;background:var(--gray);color:var(--muted)}
+  .badge.acquis{background:var(--green-l);color:var(--green)}
+  .badge.en-cours{background:var(--yellow-l);color:var(--yellow)}
+  .badge.non-acquis{background:#F5E0E0;color:#B44242}
+  .badge.transfert{background:var(--blue-l);color:var(--blue)}
+  .tag{font-size:0.68rem;font-weight:500;padding:2px 7px;border-radius:4px}
+  .t-eval{background:var(--accent-l);color:var(--accent)}
+  .t-phases{background:var(--green-l);color:var(--green)}
+  .t-formation{background:#EDE0F7;color:#7B3FA8}
+  .t-bilan{background:var(--blue-l);color:var(--blue)}
+  .t-dur{background:var(--gray);color:var(--muted)}
+
+  .det-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--sh);display:none}
+  .det-panel.vis{display:block;animation:fadeIn 0.25s ease}
+  .det-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .det-name{font-family:'DM Serif Display',serif;font-size:1.5rem;font-weight:400}
+  .close-btn{background:var(--gray);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:0.9rem}
+  .det-stats{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+  .dstat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 16px;flex:1;min-width:90px;text-align:center}
+  .dstat .v{font-size:1.5rem;font-weight:700;color:var(--accent)}
+  .dstat .l{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-top:2px}
+  .acts-title{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:12px}
+
+  .tl{display:flex;flex-direction:column}
+  .tli{display:grid;grid-template-columns:32px 1fr;gap:0 8px}
+  .tl-dc{display:flex;flex-direction:column;align-items:center}
+  .tl-d{width:11px;height:11px;border-radius:50%;border:2px solid var(--border);background:var(--surface);margin-top:8px;flex-shrink:0}
+  .tl-d.eval{border-color:var(--accent);background:var(--accent)}
+  .tl-d.phases{border-color:var(--green);background:var(--green)}
+  .tl-d.formation{border-color:#7B3FA8;background:#7B3FA8}
+  .tl-d.bilan{border-color:var(--blue);background:var(--blue)}
+  .tl-ln{flex:1;width:2px;background:var(--border);margin-top:2px}
+  .tl-c{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:10px}
+  .tl-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;gap:8px}
+  .tl-nom{font-weight:600;font-size:0.86rem}
+  .tl-date{font-size:0.72rem;color:var(--muted);white-space:nowrap}
+  .tl-comp{font-size:0.76rem;color:var(--muted);margin-bottom:5px}
+  .tl-meta{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .tl-rap{font-size:0.72rem;color:var(--muted);font-style:italic;margin-top:4px}
+
+  .sec-lbl{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  .sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+  .comp-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;margin-bottom:10px}
+  .cn{font-weight:600;font-size:0.92rem;margin-bottom:4px}
+  .co{font-size:0.8rem;color:var(--muted);line-height:1.5;margin-bottom:6px}
+  .cm{display:flex;gap:5px;flex-wrap:wrap}
+  .ct{font-size:0.68rem;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--gray);color:var(--muted)}
+  .cd{font-size:1.05rem;font-weight:700;color:var(--accent);white-space:nowrap}
+
+  .empty{text-align:center;padding:40px;color:var(--muted)}
+  .empty .ei{font-size:2.2rem;margin-bottom:10px}
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(40px);background:var(--text);color:white;padding:12px 20px;border-radius:10px;font-size:0.85rem;font-weight:500;box-shadow:var(--sh);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  @media(min-width:700px){.toast{bottom:32px}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- ÉCRAN DE CONFIGURATION (premier lancement) -->
+<!-- ══════════════════════════════════════════ -->
+<div id="setup" class="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">ISTYA <span>Compétences</span></div>
+    <div class="setup-subtitle">Configuration de votre espace — à faire une seule fois</div>
+
+    <div class="setup-help">
+      <strong>Comment obtenir ces informations ?</strong><br>
+      1. Allez sur <a href="https://www.notion.so/my-integrations" target="_blank">notion.so/my-integrations</a> → créez une intégration → copiez le token<br>
+      2. Ouvrez chaque base dans Notion → copiez l'ID depuis l'URL (les 32 caractères après le dernier /)<br>
+      3. Connectez l'intégration à chaque base (bouton ··· → Connections)
+    </div>
+
+    <div class="setup-error" id="setup-err"></div>
+
+    <div class="setup-section">
+      <h3>Clé API Notion</h3>
+      <div class="setup-field">
+        <label>Token d'intégration</label>
+        <input type="password" id="cfg-token" placeholder="secret_xxxxxxxxxxxxxxxxxxxxxx">
+        <span class="hint">Commence par secret_ — visible une seule fois dans Notion</span>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <h3>Identifiants des bases de données</h3>
+      <div class="setup-field">
+        <label>Base Salariés</label>
+        <input type="text" id="cfg-sal" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      </div>
+      <div class="setup-field">
+        <label>Base Encadrants</label>
+        <input type="text" id="cfg-enc" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      </div>
+      <div class="setup-field">
+        <label>Base Compétences</label>
+        <input type="text" id="cfg-comp" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      </div>
+      <div class="setup-field">
+        <label>Base Activités / Évaluations</label>
+        <input type="text" id="cfg-act" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      </div>
+    </div>
+
+    <button class="btn-setup" onclick="saveConfig()">Accéder à l'application →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- APPLICATION PRINCIPALE                    -->
+<!-- ══════════════════════════════════════════ -->
+<div id="app">
+  <header>
+    <div class="logo">ISTYA <span>Compétences</span></div>
+    <nav class="top-nav">
+      <button class="nav-tab active" onclick="switchView('saisie',this)">+ Saisir</button>
+      <button class="nav-tab" onclick="switchView('suivi',this)">Suivi des salariés</button>
+      <button class="nav-tab" onclick="switchView('referentiel',this)">Référentiel</button>
+    </nav>
+    <button class="btn-config" onclick="resetConfig()">⚙ Config</button>
+  </header>
+
+  <main>
+    <!-- SAISIE -->
+    <div class="view active" id="view-saisie">
+      <div class="page-title">Saisir une <em>activité</em></div>
+      <div class="page-subtitle">Évaluation, phase réflexive, formation ou bilan</div>
+      <div class="err-banner" id="err-s"></div>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="fg"><label>Salarié</label><select id="f-sal"><option>Chargement…</option></select></div>
+          <div class="fg"><label>Encadrant</label><select id="f-enc"><option>Chargement…</option></select></div>
+          <div class="fg"><label>Date</label><input type="date" id="f-date"></div>
+          <div class="fg"><label>Durée (minutes)</label><input type="number" id="f-dur" placeholder="60" min="0" step="5"></div>
+          <hr class="div">
+          <div class="fg full"><label>Type d'activité</label>
+            <div class="pills">
+              <button class="pill" data-type="Evaluation" data-sel="s-eval" onclick="selPill(this,'type')">📋 Évaluation</button>
+              <button class="pill" data-type="Phase reflexives" data-sel="s-phases" onclick="selPill(this,'type')">🔄 Phase réflexive</button>
+              <button class="pill" data-type="Formation" data-sel="s-formation" onclick="selPill(this,'type')">📚 Formation</button>
+              <button class="pill" data-type="Bilan de positionnement" data-sel="s-bilan" onclick="selPill(this,'type')">🎯 Bilan</button>
+            </div>
+          </div>
+          <div class="fg full"><label>Compétence travaillée</label><select id="f-comp"><option>Chargement…</option></select></div>
+          <div class="fg full"><label>Niveau observé</label>
+            <div class="pills">
+              <button class="npill" data-n="Non acquis" data-sel="s-niv" onclick="selPill(this,'niv')">🔴 Non acquis</button>
+              <button class="npill" data-n="En cours d'acquisition" data-sel="s-niv" onclick="selPill(this,'niv')">🟡 En cours</button>
+              <button class="npill" data-n="Acquis" data-sel="s-niv" onclick="selPill(this,'niv')">🟢 Acquis</button>
+              <button class="npill" data-n="Capacité de transfert" data-sel="s-niv" onclick="selPill(this,'niv')">🔵 Transfert</button>
+            </div>
+          </div>
+          <div class="fg full"><label>Rapport de l'activité</label>
+            <select id="f-rap">
+              <option value="">— Sélectionner —</option>
+              <option>Evaluation réalisée</option>
+              <option>Phases reflexives non réalisées</option>
+              <option>Phases reflexives réalisées avec aide</option>
+              <option>Phases réflexives réalisées avec succès</option>
+              <option>Formation réalisée</option>
+              <option>Bilan de positionnement réalisé</option>
+            </select>
+          </div>
+          <div class="fg full"><label>Intitulé de l'activité</label><input type="text" id="f-nom" placeholder="ex. Évaluation tri sélectif — Mars 2026"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-sec" onclick="resetForm()">Réinitialiser</button>
+          <button class="btn-primary" id="btn-save" onclick="saveActivite()">Enregistrer dans Notion →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUIVI -->
+    <div class="view" id="view-suivi">
+      <div class="suivi-top">
+        <div><div class="page-title">Suivi des <em>salariés</em></div><div class="page-subtitle" style="margin-bottom:0">Cliquez sur une carte</div></div>
+        <select id="filter-sal" onchange="renderSuivi()" style="font-size:0.85rem;padding:8px 13px;width:auto">
+          <option value="">Tous les salariés</option>
+        </select>
+      </div>
+      <div id="load-suivi" class="loading"><div class="spinner"></div> Chargement depuis Notion…</div>
+      <div class="sal-grid" id="sal-grid"></div>
+      <div class="det-panel" id="det-panel">
+        <div class="det-hdr"><div class="det-name" id="det-name"></div><button class="close-btn" onclick="closeDet()">✕</button></div>
+        <div class="det-stats" id="det-stats"></div>
+        <div class="acts-title">Historique des activités</div>
+        <div id="load-det" class="loading" style="display:none"><div class="spinner"></div> Chargement…</div>
+        <div class="tl" id="det-tl"></div>
+      </div>
+    </div>
+
+    <!-- RÉFÉRENTIEL -->
+    <div class="view" id="view-referentiel">
+      <div class="page-title">Référentiel des <em>compétences</em></div>
+      <div class="page-subtitle">Objectifs, secteurs et durées estimées</div>
+      <div id="load-ref" class="loading"><div class="spinner"></div> Chargement depuis Notion…</div>
+      <div id="comp-list"></div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" onclick="switchView('saisie',this,true)"><span class="icon">✏️</span>Saisir</button>
+    <button class="bnav-btn" onclick="switchView('suivi',this,true)"><span class="icon">👥</span>Suivi</button>
+    <button class="bnav-btn" onclick="switchView('referentiel',this,true)"><span class="icon">📋</span>Référentiel</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIGURATION (localStorage)
+// ═══════════════════════════════════════════
+let CFG = {};
+
+function loadConfig() {
+  const saved = localStorage.getItem('istya_cfg');
+  if (saved) { CFG = JSON.parse(saved); return true; }
+  return false;
+}
+
+function saveConfig() {
+  const token = document.getElementById('cfg-token').value.trim();
+  const sal   = document.getElementById('cfg-sal').value.trim().replace(/-/g,'');
+  const enc   = document.getElementById('cfg-enc').value.trim().replace(/-/g,'');
+  const comp  = document.getElementById('cfg-comp').value.trim().replace(/-/g,'');
+  const act   = document.getElementById('cfg-act').value.trim().replace(/-/g,'');
+
+  if (!token || !sal || !enc || !comp || !act) {
+    showSetupErr('Tous les champs sont obligatoires.'); return;
+  }
+  if (!token.startsWith('secret_')) {
+    showSetupErr('Le token doit commencer par secret_'); return;
+  }
+  CFG = { token, sal, enc, comp, act };
+  localStorage.setItem('istya_cfg', JSON.stringify(CFG));
+  startApp();
+}
+
+function resetConfig() {
+  if (!confirm('Réinitialiser la configuration ? Vous devrez re-saisir vos identifiants Notion.')) return;
+  localStorage.removeItem('istya_cfg');
+  location.reload();
+}
+
+function showSetupErr(msg) {
+  const el = document.getElementById('setup-err');
+  el.textContent = msg; el.classList.add('show');
+}
+
+// ═══════════════════════════════════════════
+// API NOTION (appel direct depuis le navigateur)
+// ═══════════════════════════════════════════
+const NOTION_VER = '2022-06-28';
+
+async function notionQuery(dbId, filter) {
+  const body = filter ? { filter } : {};
+  const r = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + CFG.token,
+      'Notion-Version': NOTION_VER,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || r.status); }
+  return (await r.json()).results;
+}
+
+async function notionCreate(dbId, props) {
+  const r = await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + CFG.token,
+      'Notion-Version': NOTION_VER,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ parent: { database_id: dbId }, properties: props })
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || r.status); }
+  return r.json();
+}
+
+// ═══════════════════════════════════════════
+// CACHE
+// ═══════════════════════════════════════════
+let cache = { salaries:[], encadrants:[], competences:[] };
+let selType=null, selNiv=null, activeSal=null;
+
+// ═══════════════════════════════════════════
+// DÉMARRAGE
+// ═══════════════════════════════════════════
+async function startApp() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  await loadSelects();
+}
+
+async function loadSelects() {
+  try {
+    const [salPages, encPages, compPages] = await Promise.all([
+      notionQuery(CFG.sal),
+      notionQuery(CFG.enc),
+      notionQuery(CFG.comp),
+    ]);
+
+    cache.salaries  = salPages.map(p=>({ id:p.id, nom: p.properties['Nom Prénom']?.title?.[0]?.plain_text||'' })).filter(x=>x.nom);
+    cache.encadrants= encPages.map(p=>({ id:p.id, nom: p.properties['Nom Prénom']?.title?.[0]?.plain_text||'' })).filter(x=>x.nom);
+    cache.competences= compPages.map(p=>({
+      id:p.id,
+      nom: p.properties['Nom de la compétence']?.title?.[0]?.plain_text||'',
+      objectifs: p.properties['Objectifs à atteindre']?.rich_text?.[0]?.plain_text||'',
+      secteurs: p.properties['Secteur concerné']?.multi_select?.map(s=>s.name)||[],
+      bloc: p.properties['Bloc de compétences / Activités']?.multi_select?.[0]?.name||'',
+      duree: p.properties['Durée estimée en heures']?.number||0,
+    })).filter(x=>x.nom);
+
+    const sel=(id,items)=>{
+      const el=document.getElementById(id);
+      el.innerHTML='<option value="">— Sélectionner —</option>'+items.map(i=>`<option value="${i.id}">${i.nom}</option>`).join('');
+    };
+    sel('f-sal', cache.salaries);
+    sel('f-enc', cache.encadrants);
+    sel('f-comp', cache.competences);
+
+    const fs=document.getElementById('filter-sal');
+    fs.innerHTML='<option value="">Tous les salariés</option>'+cache.salaries.map(s=>`<option value="${s.id}">${s.nom}</option>`).join('');
+  } catch(e) {
+    showErr('err-s','Erreur de connexion Notion : '+e.message+'. Vérifiez votre token et les IDs de bases.');
+  }
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function switchView(id, btn, mob=false) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  if(mob) document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  else document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='suivi') loadSuivi();
+  if(id==='referentiel') renderRef();
+}
+
+// ═══════════════════════════════════════════
+// SAISIE
+// ═══════════════════════════════════════════
+function selPill(btn, group) {
+  document.querySelectorAll(group==='type'?'.pill':'.npill').forEach(p=>{
+    p.className=group==='type'?'pill':'npill';
+  });
+  btn.classList.add(btn.dataset.sel);
+  if(group==='type') selType=btn.dataset.type;
+  else selNiv=btn.dataset.n;
+}
+
+function resetForm() {
+  ['f-sal','f-enc','f-comp','f-rap'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-dur').value='';
+  document.getElementById('f-nom').value='';
+  document.querySelectorAll('.pill').forEach(p=>p.className='pill');
+  document.querySelectorAll('.npill').forEach(p=>p.className='npill');
+  selType=null; selNiv=null;
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  hideErr('err-s');
+}
+
+async function saveActivite() {
+  const salId  = document.getElementById('f-sal').value;
+  const compId = document.getElementById('f-comp').value;
+  if(!salId||!selType||!compId){ showErr('err-s','Salarié, type et compétence sont requis.'); return; }
+
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='Enregistrement…';
+  hideErr('err-s');
+
+  try {
+    const nom = document.getElementById('f-nom').value ||
+      (selType + (compId ? ' — ' + (cache.competences.find(c=>c.id===compId)?.nom||'') : ''));
+    const encId = document.getElementById('f-enc').value;
+    const date  = document.getElementById('f-date').value;
+    const dur   = parseInt(document.getElementById('f-dur').value)||0;
+    const rap   = document.getElementById('f-rap').value;
+
+    const props = {
+      "Nom de l'évaluation": { title:[{text:{content:nom}}] },
+      "Type": { select:{name:selType} },
+      "Durée minutes": { number:dur },
+    };
+    if(date) props["Date "]={date:{start:date}};
+    if(selNiv) props["Niveau de la compétence"]={select:{name:selNiv}};
+    if(rap) props["Rapport de l'activité"]={select:{name:rap}};
+    if(salId) props["Salariés BDD Suivi des compétences"]={relation:[{id:salId}]};
+    if(encId) props["Encadrants BDD Suivi des compétences"]={relation:[{id:encId}]};
+    if(compId) props["Compétences BDD Suivi des compétences"]={relation:[{id:compId}]};
+
+    await notionCreate(CFG.act, props);
+    showToast('✓ Enregistré dans Notion !');
+    resetForm();
+  } catch(e) {
+    showErr('err-s','Erreur : '+e.message);
+  } finally {
+    btn.disabled=false; btn.textContent='Enregistrer dans Notion →';
+  }
+}
+
+// ═══════════════════════════════════════════
+// SUIVI
+// ═══════════════════════════════════════════
+const TC={'Evaluation':'eval','Phase reflexives':'phases','Formation':'formation','Bilan de positionnement':'bilan'};
+const TL={'Evaluation':'📋 Évaluation','Phase reflexives':'🔄 Phase réflexive','Formation':'📚 Formation','Bilan de positionnement':'🎯 Bilan'};
+const TG={'Evaluation':'t-eval','Phase reflexives':'t-phases','Formation':'t-formation','Bilan de positionnement':'t-bilan'};
+
+function nbadge(n){
+  const m={'Non acquis':'non-acquis',"En cours d'acquisition":'en-cours','Acquis':'acquis','Capacité de transfert':'transfert'};
+  return n?`<span class="badge ${m[n]||''}">${n}</span>`:'';
+}
+
+let allActivites=[];
+
+async function loadSuivi() {
+  document.getElementById('load-suivi').style.display='flex';
+  document.getElementById('sal-grid').innerHTML='';
+  try {
+    const pages = await notionQuery(CFG.act);
+    allActivites = pages.map(p=>({
+      id:p.id,
+      nom: p.properties["Nom de l'évaluation"]?.title?.[0]?.plain_text||'',
+      type: p.properties['Type']?.select?.name||'',
+      date: p.properties['Date ']?.date?.start||'',
+      duree: p.properties['Durée minutes']?.number||0,
+      niveau: p.properties['Niveau de la compétence']?.select?.name||'',
+      rapport: p.properties["Rapport de l'activité"]?.select?.name||'',
+      salId: p.properties['Salariés BDD Suivi des compétences']?.relation?.[0]?.id||'',
+      compId: p.properties['Compétences BDD Suivi des compétences']?.relation?.[0]?.id||'',
+    }));
+  } catch(e) { allActivites=[]; }
+  document.getElementById('load-suivi').style.display='none';
+  renderSuivi();
+}
+
+function renderSuivi() {
+  const filter=document.getElementById('filter-sal').value;
+  const sals=filter?cache.salaries.filter(s=>s.id===filter):cache.salaries;
+  const grid=document.getElementById('sal-grid');
+  if(!sals.length){grid.innerHTML='<div class="empty"><div class="ei">👤</div><p>Aucun salarié trouvé</p></div>';return;}
+  grid.innerHTML=sals.map(s=>{
+    const acts=allActivites.filter(a=>a.salId===s.id);
+    const totalMin=acts.reduce((acc,a)=>acc+(a.duree||0),0);
+    const comps=[...new Set(acts.map(a=>a.compId).filter(Boolean))];
+    const lastNiv=acts.filter(a=>a.niveau).slice(-1)[0]?.niveau;
+    const cb=comps.slice(0,3).map(cid=>{const c=cache.competences.find(x=>x.id===cid);return c?`<span class="badge">${c.nom.length>26?c.nom.slice(0,24)+'…':c.nom}</span>`:''}).join('');
+    return `<div class="sal-card${activeSal===s.id?' sel':''}" onclick="showDet('${s.id}')">
+      <div class="sal-name">${s.nom}</div>
+      <div class="sal-stats">
+        <div><div class="sv">${acts.length}</div><div class="sl">Activités</div></div>
+        <div><div class="sv">${(totalMin/60).toFixed(1)}h</div><div class="sl">Réalisées</div></div>
+        <div><div class="sv">${comps.length}</div><div class="sl">Compétences</div></div>
+      </div>
+      ${lastNiv?nbadge(lastNiv):''}
+      <div class="mbadges">${cb}</div>
+    </div>`;
+  }).join('');
+}
+
+function showDet(salId) {
+  activeSal=salId; renderSuivi();
+  const s=cache.salaries.find(x=>x.id===salId);
+  document.getElementById('det-name').textContent=s.nom;
+  document.getElementById('det-panel').classList.add('vis');
+
+  const acts=allActivites.filter(a=>a.salId===salId).sort((a,b)=>b.date.localeCompare(a.date));
+  const totalMin=acts.reduce((acc,a)=>acc+(a.duree||0),0);
+  const comps=[...new Set(acts.map(a=>a.compId).filter(Boolean))];
+  document.getElementById('det-stats').innerHTML=`
+    <div class="dstat"><div class="v">${acts.length}</div><div class="l">Activités</div></div>
+    <div class="dstat"><div class="v">${(totalMin/60).toFixed(1)}h</div><div class="l">Heures</div></div>
+    <div class="dstat"><div class="v">${comps.length}</div><div class="l">Compétences</div></div>`;
+  document.getElementById('det-tl').innerHTML=acts.length
+    ?acts.map((a,i)=>{
+        const c=cache.competences.find(x=>x.id===a.compId);
+        return `<div class="tli">
+          <div class="tl-dc"><div class="tl-d ${TC[a.type]||''}"></div>${i<acts.length-1?'<div class="tl-ln"></div>':''}</div>
+          <div class="tl-c">
+            <div class="tl-top"><div class="tl-nom">${a.nom||a.type}</div><div class="tl-date">${fmtDate(a.date)}</div></div>
+            ${c?`<div class="tl-comp">${c.nom}</div>`:''}
+            <div class="tl-meta">
+              <span class="tag ${TG[a.type]||''}">${TL[a.type]||a.type}</span>
+              ${nbadge(a.niveau)}
+              ${a.duree?`<span class="tag t-dur">⏱ ${a.duree}min</span>`:''}
+            </div>
+            ${a.rapport?`<div class="tl-rap">${a.rapport}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')
+    :'<div class="empty"><div class="ei">📭</div><p>Aucune activité</p></div>';
+  setTimeout(()=>document.getElementById('det-panel').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function closeDet(){activeSal=null;document.getElementById('det-panel').classList.remove('vis');renderSuivi();}
+function fmtDate(iso){if(!iso)return'—';const[y,m,d]=iso.split('-');return`${d}/${m}/${y}`;}
+
+// ═══════════════════════════════════════════
+// RÉFÉRENTIEL
+// ═══════════════════════════════════════════
+async function renderRef() {
+  document.getElementById('load-ref').style.display='flex';
+  document.getElementById('comp-list').innerHTML='';
+  if(!cache.competences.length) try{await loadSelects();}catch(e){}
+  document.getElementById('load-ref').style.display='none';
+  const blocs={};
+  cache.competences.forEach(c=>{if(!blocs[c.bloc])blocs[c.bloc]=[];blocs[c.bloc].push(c);});
+  document.getElementById('comp-list').innerHTML=Object.entries(blocs).map(([b,cs])=>
+    `<div class="sec-lbl">${b||'Compétences'}</div>`+
+    cs.map(c=>`<div class="comp-card">
+      <div>
+        <div class="cn">${c.nom}</div>
+        ${c.objectifs?`<div class="co">${c.objectifs}</div>`:''}
+        <div class="cm">${c.secteurs.map(s=>`<span class="ct">📍 ${s}</span>`).join('')}${c.duree?`<span class="ct">⏱ ${c.duree}h</span>`:''}</div>
+      </div>
+      ${c.duree?`<div class="cd">${c.duree}h</div>`:''}
+    </div>`).join('')
+  ).join('');
+}
+
+// ═══════════════════════════════════════════
+// UTILITAIRES
+// ═══════════════════════════════════════════
+function showToast(msg,warn=false){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.style.background=warn?'#8B3A1F':'var(--text)';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);
+}
+function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.add('show');}
+function hideErr(id){document.getElementById(id).classList.remove('show');}
+
+// ═══════════════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════════════
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+if(loadConfig()) startApp();
+</script>
+</body>
+</html>
